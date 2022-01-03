@@ -89,7 +89,6 @@ func (c *core) Write(ent zapcore.Entry, fs []zapcore.Field) error {
 		event.Message = ent.Message
 		event.Timestamp = ent.Time
 		event.Level = sentrySeverity(ent.Level)
-		event.Extra = clone.fields
 		event.Tags = c.cfg.Tags
 		event.Exception = clone.createExceptions()
 
@@ -101,7 +100,9 @@ func (c *core) Write(ent zapcore.Entry, fs []zapcore.Field) error {
 			}
 		}
 
-		_ = c.client.CaptureEvent(event, nil, c.scope())
+		s := c.scope()
+		s.SetContext("fields", clone.fields)
+		_ = c.client.CaptureEvent(event, nil, s)
 	}
 
 	// We may be crashing the program, so should flush any buffered events.
